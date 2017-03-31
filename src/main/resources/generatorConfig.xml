@@ -37,7 +37,9 @@
     
 		<commentGenerator>
 			<!--true关闭注释 -->
-			<property name="suppressAllComments" value="true" />
+			<property name="suppressAllComments" value="false" />
+			<!-- 打开数据库注释 -->
+			<property name="addRemarkComments" value="false" />
 			<property name="suppressDate" value="true"/>
 		</commentGenerator>
 
@@ -94,7 +96,7 @@
 			<property name="enableSubPackages" value="true" />
 		</javaClientGenerator>
 
-		<table schema="" tableName="ques_inquiry_word" domainObjectName="QuesInquiryWord"/>
+		<table schema="" tableName="cms_user" domainObjectName="CmsUser"/>
 
 <!-- 		<table schema="" tableName="ques_inquiry_word" domainObjectName="QuesInquiryWord" enableDeleteByPrimaryKey="false"  -->
 <!-- 			enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"></table> -->
