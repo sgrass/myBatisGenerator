@@ -16,6 +16,8 @@
 package org.mybatis.generator.codegen.mybatis3.javamapper.elements.annotated;
 
 import static org.mybatis.generator.api.dom.OutputUtilities.javaIndent;
+import static org.mybatis.generator.codegen.mybatis3.MyBatis3FormattingUtilities.getEscapedColumnName;
+import static org.mybatis.generator.codegen.mybatis3.MyBatis3FormattingUtilities.getParameterClause;
 import static org.mybatis.generator.codegen.mybatis3.MyBatis3FormattingUtilities.getSelectListPhrase;
 import static org.mybatis.generator.internal.util.StringUtility.escapeStringForJava;
 
@@ -25,6 +27,7 @@ import org.mybatis.generator.api.IntrospectedColumn;
 import org.mybatis.generator.api.dom.java.FullyQualifiedJavaType;
 import org.mybatis.generator.api.dom.java.Interface;
 import org.mybatis.generator.api.dom.java.Method;
+import org.mybatis.generator.codegen.mybatis3.ListUtilities;
 import org.mybatis.generator.codegen.mybatis3.javamapper.elements.SelectAllMethodGenerator;
 import org.mybatis.generator.config.PropertyRegistry;
 import org.mybatis.generator.internal.util.StringUtility;
@@ -44,10 +47,16 @@ public class AnnotatedSelectAllMethodGenerator extends
     public void addMapperAnnotations(Interface interfaze, Method method) {
         interfaze.addImportedType(new FullyQualifiedJavaType("org.apache.ibatis.annotations.Select")); //$NON-NLS-1$
 
+        /**
+      	 * TODO 修改mapper中注解的selectAll() sql生成格式，支持动态sql
+      	 */
+        
         StringBuilder sb = new StringBuilder();
         method.addAnnotation("@Select({"); //$NON-NLS-1$
         javaIndent(sb, 1);
-        sb.append("\"select\","); //$NON-NLS-1$
+        sb.append("\"<script>\",\n");
+        javaIndent(sb, 2);
+        sb.append("\"SELECT\","); //$NON-NLS-1$
         method.addAnnotation(sb.toString());
         
         Iterator<IntrospectedColumn> iter = introspectedTable
@@ -64,7 +73,7 @@ public class AnnotatedSelectAllMethodGenerator extends
                 sb.append(", "); //$NON-NLS-1$
             }
 
-            if (sb.length() > 80) {
+            if (sb.length() > 120) {
                 sb.append("\","); //$NON-NLS-1$
                 method.addAnnotation(sb.toString());
                 
@@ -85,9 +94,43 @@ public class AnnotatedSelectAllMethodGenerator extends
         
         sb.setLength(0);
         javaIndent(sb, 1);
-        sb.append("\"from "); //$NON-NLS-1$
+        sb.append("\"FROM "); //$NON-NLS-1$
         sb.append(escapeStringForJava(introspectedTable
                 .getAliasedFullyQualifiedTableNameAtRuntime()));
+        sb.append("\",\n");
+        
+        //TODO 增加selectAll()动态查询
+        javaIndent(sb, 2);
+        sb.append("\"<where>\",\n");
+        javaIndent(sb, 2);
+        iter = introspectedTable.getAllColumns().iterator();
+        while (iter.hasNext()) {
+	          IntrospectedColumn introspectedColumn = iter.next();
+	          sb.append("  \"");
+	          sb.append("<if test=\\\""+introspectedColumn.getJavaProperty()+" != null\\\" >");
+	          sb.append("AND "+escapeStringForJava(getEscapedColumnName(introspectedColumn)));
+	          sb.append(" = "); //$NON-NLS-1$
+	          sb.append(getParameterClause(introspectedColumn));
+	          sb.append("</if>");
+	
+	          sb.append("\","); //$NON-NLS-1$
+	          method.addAnnotation(sb.toString());
+	
+	          // set up for the next column
+	          if (iter.hasNext()) {
+	              sb.setLength(0);
+	              javaIndent(sb, 1);
+	//              sb.append("  \"");
+	          }
+	      }
+	      method.addAnnotation("\t\t\"</where>\",");
+        sb.setLength(0);
+        //---
+        
+        
+        
+        javaIndent(sb, 1);
+        sb.append("\"</script>");
         sb.append('\"');
         if (hasOrderBy) {
             sb.append(',');

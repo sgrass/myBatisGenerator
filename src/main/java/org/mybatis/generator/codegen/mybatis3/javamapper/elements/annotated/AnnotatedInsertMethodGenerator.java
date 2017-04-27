@@ -46,6 +46,8 @@ public class AnnotatedInsertMethodGenerator extends
     @Override
     public void addMapperAnnotations(Method method) {
         
+    		//TODO 修改注解生成insert()
+    	
         GeneratedKey gk = introspectedTable.getGeneratedKey();
         
         method.addAnnotation("@Insert({"); //$NON-NLS-1$
@@ -55,66 +57,91 @@ public class AnnotatedInsertMethodGenerator extends
         javaIndent(insertClause, 1);
         javaIndent(valuesClause, 1);
 
-        insertClause.append("\"insert into "); //$NON-NLS-1$
+        method.addAnnotation("\t\"<script>\",");
+        
+        insertClause.append("\"INSERT INTO "); //$NON-NLS-1$
         insertClause.append(escapeStringForJava(introspectedTable
                 .getFullyQualifiedTableNameAtRuntime()));
-        insertClause.append(" ("); //$NON-NLS-1$
-
-        valuesClause.append("\"values ("); //$NON-NLS-1$
+        insertClause.append("\",\n");
+        javaIndent(insertClause, 2);
+        insertClause.append("\"<trim prefix=\\\"(\\\" suffix=\\\")\\\" suffixOverrides=\\\",\\\" >"); //$NON-NLS-1$
+        insertClause.append("\",\n");
+        javaIndent(insertClause, 3);        
+        
+//        valuesClause.append("\"VALUES ("); //$NON-NLS-1$
+        valuesClause.append("\"<trim prefix=\\\"values (\\\" suffix=\\\")\\\" suffixOverrides=\\\",\\\" >");
+        valuesClause.append("\",\n");
+        javaIndent(valuesClause, 3);   
 
         List<String> valuesClauses = new ArrayList<String>();
-        Iterator<IntrospectedColumn> iter = ListUtilities.removeIdentityAndGeneratedAlwaysColumns(introspectedTable.getAllColumns())
-                .iterator();
-        boolean hasFields = false;
+        Iterator<IntrospectedColumn> iter = ListUtilities.removeIdentityAndGeneratedAlwaysColumns(introspectedTable.getAllColumns()).iterator();
+
+        introspectedTable.getAllColumns().iterator();
         while (iter.hasNext()) {
             IntrospectedColumn introspectedColumn = iter.next();
-
-            insertClause.append(escapeStringForJava(getEscapedColumnName(introspectedColumn)));
-            valuesClause.append(getParameterClause(introspectedColumn));
-            hasFields = true;
+//            insertClause.append(escapeStringForJava(getEscapedColumnName(introspectedColumn)));
+            insertClause.append("\"<if test=\\\""+introspectedColumn.getJavaProperty()+" != null\\\">");
+            insertClause.append(introspectedColumn.getActualColumnName()+",");
+            insertClause.append("</if>\"");
+            
             if (iter.hasNext()) {
-                insertClause.append(", "); //$NON-NLS-1$
-                valuesClause.append(", "); //$NON-NLS-1$
+              insertClause.append(","); //$NON-NLS-1$
+            	method.addAnnotation(insertClause.toString());
+  	          insertClause.setLength(0);
+  	          javaIndent(insertClause, 2);
             }
 
-            if (valuesClause.length() > 60) {
-                if (!iter.hasNext()) {
-                    insertClause.append(')');
-                    valuesClause.append(')');
-                }
-                insertClause.append("\","); //$NON-NLS-1$
-                valuesClause.append('\"');
-                if (iter.hasNext()) {
-                    valuesClause.append(',');
-                }
-                
-                method.addAnnotation(insertClause.toString());
-                insertClause.setLength(0);
-                javaIndent(insertClause, 1);
-                insertClause.append('\"');
-                
-                valuesClauses.add(valuesClause.toString());
-                valuesClause.setLength(0);
-                javaIndent(valuesClause, 1);
-                valuesClause.append('\"');
-                hasFields = false;
+            if (!iter.hasNext()) {
+	            insertClause.append(",\n");
+	            javaIndent(insertClause, 2);
+	            insertClause.append("\"</trim>\",");
+	            method.addAnnotation(insertClause.toString());
+  	          insertClause.setLength(0);
+            }
+            
+        }
+        
+        iter = introspectedTable.getAllColumns().iterator();
+        while (iter.hasNext()) {
+            IntrospectedColumn introspectedColumn = iter.next();
+//            valuesClause.append(getParameterClause(introspectedColumn));
+            valuesClause.append("\"<if test=\\\""+introspectedColumn.getJavaProperty()+" != null\\\">");
+            valuesClause.append(getParameterClause(introspectedColumn)+",");
+            valuesClause.append("</if>\"");
+
+            if (iter.hasNext()) {
+  	          valuesClause.append(","); //$NON-NLS-1$
+            	method.addAnnotation(valuesClause.toString());
+            	valuesClause.setLength(0);
+  	          javaIndent(valuesClause, 2);
+            }
+
+            if (!iter.hasNext()) {
+  	          valuesClause.append(",\n");
+	            javaIndent(valuesClause, 2);
+	            valuesClause.append("\"</trim>\",");
+	            method.addAnnotation(valuesClause.toString());
+	            valuesClause.setLength(0);
             }
         }
         
-        if (hasFields) {
-            insertClause.append(")\","); //$NON-NLS-1$
-            method.addAnnotation(insertClause.toString());
-
-            valuesClause.append(")\""); //$NON-NLS-1$
-            valuesClauses.add(valuesClause.toString());
-        }
+//        if (hasFields) {
+//            insertClause.append(")\","); //$NON-NLS-1$
+//            method.addAnnotation(insertClause.toString());
+//
+//            valuesClause.append(")\","); //$NON-NLS-1$
+//            valuesClauses.add(valuesClause.toString());
+//        }
 
         for (String clause : valuesClauses) {
             method.addAnnotation(clause);
         }
         
-        method.addAnnotation("})"); //$NON-NLS-1$
+        method.addAnnotation("\t\"</script>\"");
+        
+        method.addAnnotation("})"); 
 
+        method.addAnnotation("@Options(useGeneratedKeys = true, keyProperty = \"id\", keyColumn = \"id\")");
         if (gk != null) {
             addGeneratedKeyAnnotation(method, gk);
         }

@@ -242,8 +242,20 @@ public class IntrospectedTableMyBatis3Impl extends IntrospectedTable {
         }
 
         for (AbstractJavaGenerator javaGenerator : clientGenerators) {
-            List<CompilationUnit> compilationUnits = javaGenerator
-                    .getCompilationUnits();
+        		/**
+        		 * TODO 此处为生成mapper.java的实现
+        		 * simple模式注解mapper由 org.mybatis.generator.codegen.mybatis3.javamapper.SimpleJavaClientGenerator.java类实现
+        		 * 
+        		 * mapper中方法名修改org.mybatis.generator.api.IntrospectedTable.java 792行
+        		 * 
+        		 * selectAll()方法注解实现类 org.mybatis.generator.codegen.mybatis3.javamapper.elements.annotated.AnnotatedSelectAllMethodGenerator.java
+        		 * updateById(record)方法注解实现类 org.mybatis.generator.codegen.mybatis3.javamapper.elements.annotated.AnnotatedUpdateByPrimaryKeyWithoutBLOBsMethodGenerator.java
+        		 * 									 实例名recoed修改类org.mybatis.generator.codegen.mybatis3.javamapper.elements.UpdateByPrimaryKeyWithoutBLOBsMethodGenerator.java
+        		 * 
+        		 * insert(record) 方法注解实现类 org.mybatis.generator.codegen.mybatis3.javamapper.elements.annotated.AnnotatedInsertMethodGenerator
+        		 * 							实例名recoed修改类org.mybatis.generator.codegen.mybatis3.javamapper.elements.InsertMethodGenerator.java
+        		 */
+            List<CompilationUnit> compilationUnits = javaGenerator.getCompilationUnits();
             for (CompilationUnit compilationUnit : compilationUnits) {
                 GeneratedJavaFile gjf = new GeneratedJavaFile(compilationUnit,
                         context.getJavaClientGeneratorConfiguration()

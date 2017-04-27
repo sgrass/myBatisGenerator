@@ -46,11 +46,16 @@ public class AnnotatedUpdateByPrimaryKeyWithoutBLOBsMethodGenerator extends
     @Override
     public void addMapperAnnotations(Method method) {
         
+    	/**
+    	 * TODO 修改mapper中注解的update sql生成格式，支持动态sql
+    	 */
         method.addAnnotation("@Update({"); //$NON-NLS-1$
 
         StringBuilder sb = new StringBuilder();
         javaIndent(sb, 1);
-        sb.append("\"update "); //$NON-NLS-1$
+        sb.append("\"<script>\",\n");
+        javaIndent(sb, 2);
+        sb.append("\"UPDATE "); //$NON-NLS-1$
         sb.append(escapeStringForJava(introspectedTable.getFullyQualifiedTableNameAtRuntime()));
         sb.append("\","); //$NON-NLS-1$
         method.addAnnotation(sb.toString());
@@ -58,7 +63,8 @@ public class AnnotatedUpdateByPrimaryKeyWithoutBLOBsMethodGenerator extends
         // set up for first column
         sb.setLength(0);
         javaIndent(sb, 1);
-        sb.append("\"set "); //$NON-NLS-1$
+        sb.append("\"<set>\",\n"); //$NON-NLS-1$
+        javaIndent(sb, 2);
 
         Iterator<IntrospectedColumn> iter;
         if (isSimple) {
@@ -71,14 +77,15 @@ public class AnnotatedUpdateByPrimaryKeyWithoutBLOBsMethodGenerator extends
         
         while (iter.hasNext()) {
             IntrospectedColumn introspectedColumn = iter.next();
-
+            sb.append("  \"");
+            sb.append("<if test=\\\""+introspectedColumn.getJavaProperty()+" != null\\\" >");
             sb.append(escapeStringForJava(getEscapedColumnName(introspectedColumn)));
             sb.append(" = "); //$NON-NLS-1$
-            sb.append(getParameterClause(introspectedColumn));
-
-            if (iter.hasNext()) {
-                sb.append(',');
-            }
+            sb.append(getParameterClause(introspectedColumn)+",");
+            sb.append("</if>");
+//            if (iter.hasNext()) {
+//                sb.append(',');
+//            }
 
             sb.append("\","); //$NON-NLS-1$
             method.addAnnotation(sb.toString());
@@ -87,9 +94,11 @@ public class AnnotatedUpdateByPrimaryKeyWithoutBLOBsMethodGenerator extends
             if (iter.hasNext()) {
                 sb.setLength(0);
                 javaIndent(sb, 1);
-                sb.append("  \""); //$NON-NLS-1$
+//                sb.append("  \""); //$NON-NLS-1$
             }
         }
+        method.addAnnotation("\t\t\"</set>\",");
+        
 
         boolean and = false;
         iter = introspectedTable.getPrimaryKeyColumns().iterator();
@@ -98,15 +107,18 @@ public class AnnotatedUpdateByPrimaryKeyWithoutBLOBsMethodGenerator extends
             sb.setLength(0);
             javaIndent(sb, 1);
             if (and) {
-                sb.append("  \"and "); //$NON-NLS-1$
+                sb.append("  \"AND "); //$NON-NLS-1$
             } else {
-                sb.append("\"where "); //$NON-NLS-1$
+                sb.append("\"WHERE "); //$NON-NLS-1$
                 and = true;
             }
 
             sb.append(escapeStringForJava(getEscapedColumnName(introspectedColumn)));
             sb.append(" = "); //$NON-NLS-1$
             sb.append(getParameterClause(introspectedColumn));
+            sb.append("\",\n");
+            javaIndent(sb, 2);
+            sb.append("\"</script>");
             sb.append('\"');
             if (iter.hasNext()) {
                 sb.append(',');
